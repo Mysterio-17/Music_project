@@ -12,6 +12,8 @@ module.exports = (io) => {
      const room = await Room.create({ code: roomCode, players: [player._id] });
          
       socket.join(roomCode);
+      await emitPlayersInRoom(roomCode, io);
+
       console.log(`${username} created room: ${roomCode}`);
       socket.emit('roomCreated', { roomCode });
     });
@@ -26,11 +28,20 @@ module.exports = (io) => {
     await foundRoom.save();
 
     socket.join(room);
+    await emitPlayersInRoom(room, io);
+
     console.log(`${username} joined room: ${room}`);
     socket.emit('roomJoined', { roomCode: room });
   });
 
   });
+};
+const emitPlayersInRoom = async (roomCode, io) => {
+  const room = await Room.findOne({ code: roomCode }).populate('players');
+  if (!room) return;
+  
+  const usernames = room.players.map(p => p.username);
+  io.to(roomCode).emit('updatePlayers', usernames);
 };
 
 function generateRoomCode(length = 6) {

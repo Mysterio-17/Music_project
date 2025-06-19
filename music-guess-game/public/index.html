@@ -31,6 +31,11 @@
     </button>
 
     <p id="message" class="mt-4 text-yellow-300 font-medium"></p>
+
+  </div>
+  <div id="playerList" class="text-white mt-4 hidden">
+  <h3 class="font-semibold text-lg mb-2">🎮 Players in Room:</h3>
+  <ul id="playersUl"></ul>
   </div>
 
   <script>
@@ -39,6 +44,8 @@
     const usernameInput = document.getElementById('username');
     const roomInput = document.getElementById('room-code');
     const messageBox = document.getElementById('message');
+    const playerList = document.getElementById("playerList");
+  const playersUl = document.getElementById("playersUl");
     
     document.getElementById("createBtn").onclick = () => {
       mode = "create";
@@ -76,7 +83,17 @@
     socket.on("errorMessage", (msg) => {
       messageBox.innerText = msg;
     });
-  
+
+    socket.on('updatePlayers', (usernames) => {
+    playerList.classList.remove("hidden");
+    playersUl.innerHTML = '';
+    usernames.forEach(name => {
+    const li = document.createElement("li");
+    li.textContent = `- ${name}`;
+    playersUl.appendChild(li);
+    });
+    });
+      
   </script>
 
   </body>

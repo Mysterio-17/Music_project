@@ -1,5 +1,6 @@
 const Room = require('../models/Room');
 const Player = require('../models/Player');
+const axios = require('axios');
 
 module.exports = (io) => {
   io.on('connection', (socket) => {
@@ -32,6 +33,29 @@ module.exports = (io) => {
 
     console.log(`${username} joined room: ${room}`);
     socket.emit('roomJoined', { roomCode: room });
+    const alreadyJoined = foundRoom.players.some(p => p.socketId === socket.id);
+if (!alreadyJoined) {
+  foundRoom.players.push(player._id);
+  await foundRoom.save();
+}
+  });
+    socket.on("loadPlaylist", async ({ playlistId, room }) => {
+    try {
+      const apiKey = process.env.YOUTUBE_API_KEY;
+      const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=10&playlistId=${playlistId}&key=${apiKey}`;
+
+      const { data } = await axios.get(url);
+      const songs = data.items.map(item => ({
+        title: item.snippet.title,
+        videoId: item.snippet.resourceId.videoId,
+      }));
+
+      // Emit songs list to room (for display or preview)
+      io.to(room).emit("playlistLoaded", songs);
+    } catch (err) {
+      console.error("Error loading playlist:", err.message);
+      socket.emit("errorMessage", "Failed to load playlist");
+    }
   });
 
   });

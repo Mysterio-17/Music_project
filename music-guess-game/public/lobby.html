@@ -11,6 +11,14 @@
   <p id="roomCode" class="mb-2 text-yellow-300 font-semibold"></p>
 
   <ul id="playersUl" class="list-disc mb-6"></ul>
+  <input id="playlistInput" type="text" placeholder="Paste YouTube Playlist URL"
+  class="w-full px-4 py-2 mb-4 rounded-md text-black max-w-md" />
+
+  <button id="loadPlaylistBtn"
+  class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded mb-4">
+  🎶 Load Playlist
+  </button>
+  <ul id="songList" class="text-left mt-4"></ul>
 
   <button id="startGameBtn" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded hidden">
     ▶️ Start Game
@@ -35,6 +43,19 @@
       socket.emit("startGame", { roomCode });
     };
 
+    document.getElementById("loadPlaylistBtn").onclick = () => {
+    const url = document.getElementById("playlistInput").value.trim();
+    if (!url) return alert("Paste a playlist URL");
+
+    const playlistId = extractPlaylistId(url);
+    if (!playlistId) return alert("Invalid playlist URL");
+    socket.emit("loadPlaylist", { playlistId, room: roomCode });
+    };
+    function extractPlaylistId(url) {
+    const match = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+    }
+
     socket.on("updatePlayers", (usernames) => {
       const playersUl = document.getElementById("playersUl");
       playersUl.innerHTML = '';
@@ -44,6 +65,16 @@
         playersUl.appendChild(li);
       });
     });
+    socket.on("playlistLoaded", (songs) => {
+    const songList = document.getElementById("songList");
+    songList.innerHTML = '';
+
+    songs.forEach(song => {
+      const li = document.createElement("li");
+      li.textContent = `🎵 ${song.title}`;
+      songList.appendChild(li);
+    });
+  });
   </script>
 </body>
 </html>

@@ -73,13 +73,13 @@
       }
     };
      socket.on("roomCreated", ({ roomCode }) => {
-      messageBox.innerText = `Room created successfully! Code: ${roomCode}`;
+      const username = usernameInput.value.trim();
+      window.location.href = `/lobby.html?room=${roomCode}&host=true&username=${encodeURIComponent(username)}`;
     });
-
-    socket.on("roomJoined", ({ roomCode }) => {
-      messageBox.innerText = `Joined Room: ${roomCode}`;
+      socket.on("roomJoined", ({ roomCode }) => {
+      const username = usernameInput.value.trim();
+      window.location.href = `/lobby.html?room=${roomCode}&host=false&username=${encodeURIComponent(username)}`;
     });
-
     socket.on("errorMessage", (msg) => {
       messageBox.innerText = msg;
     });

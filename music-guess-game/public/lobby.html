@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lobby Room</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center h-screen">
+  <h1 class="text-2xl font-bold mb-4">🎵 Lobby Room</h1>
+  <p id="roomCode" class="mb-2 text-yellow-300 font-semibold"></p>
+
+  <ul id="playersUl" class="list-disc mb-6"></ul>
+
+  <button id="startGameBtn" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded hidden">
+    ▶️ Start Game
+  </button>
+
+  <script>
+    const socket = io();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get("room");
+    const isHost = urlParams.get("host") === "true"; 
+    const username = urlParams.get("username");
+    socket.emit("joinRoom", { username, room: roomCode });
+
+    document.getElementById("roomCode").innerText = `Room Code: ${roomCode}`;
+
+    if (isHost) {
+      document.getElementById("startGameBtn").classList.remove("hidden");
+    }
+
+    document.getElementById("startGameBtn").onclick = () => {
+      socket.emit("startGame", { roomCode });
+    };
+
+    socket.on("updatePlayers", (usernames) => {
+      const playersUl = document.getElementById("playersUl");
+      playersUl.innerHTML = '';
+      usernames.forEach(name => {
+        const li = document.createElement("li");
+        li.textContent = name;
+        playersUl.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,6 +1,11 @@
 const Room = require('../models/Room');
 const Player = require('../models/Player');
+const Playlist = require('../models/playlist');
+
 const axios = require('axios');
+const gameData = {};
+const { fetchSongsFromPlaylist } = require("../controllers/youtubeController");
+
 
 module.exports = (io) => {
   io.on('connection', (socket) => {
@@ -40,6 +45,7 @@ if (!alreadyJoined) {
 }
   });
     socket.on("loadPlaylist", async ({ playlistId, room }) => {
+     
     try {
       const apiKey = process.env.YOUTUBE_API_KEY;
       const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=10&playlistId=${playlistId}&key=${apiKey}`;
@@ -49,14 +55,27 @@ if (!alreadyJoined) {
         title: item.snippet.title,
         videoId: item.snippet.resourceId.videoId,
       }));
+      const selectedSongs = getRandomTenSongs(songs);
+      gameData[room] = {
+      songs: selectedSongs,
+      currentSongIndex: 0,
+      };
+      await Playlist.findOneAndDelete({ roomCode: room });
+      await Playlist.create({
+      roomCode: room,
+      songs: selectedSongs,
+      });
 
-      // Emit songs list to room (for display or preview)
-      io.to(room).emit("playlistLoaded", songs);
+      console.log(`🎵 Saved ${selectedSongs.length} songs to MongoDB for room: ${room}`);
     } catch (err) {
       console.error("Error loading playlist:", err.message);
       socket.emit("errorMessage", "Failed to load playlist");
     }
   });
+    function getRandomTenSongs(songs) {
+    const shuffled = songs.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 10);
+  }
 
   });
 };
@@ -71,3 +90,5 @@ const emitPlayersInRoom = async (roomCode, io) => {
 function generateRoomCode(length = 6) {
   return Math.random().toString(36).substring(2, 2 + length).toUpperCase();
 }
+
+

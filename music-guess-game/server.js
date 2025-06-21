@@ -10,6 +10,9 @@ const io = new Server(server);
 
 // Serve static files
 app.use(express.static('public'));
+const debugRoutes = require('./src/routes/debug');
+app.use(debugRoutes);
+
 
 const roomSockets = require('./src/sockets/room');
 roomSockets(io);

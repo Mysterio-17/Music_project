@@ -1,43 +1,28 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+exports.generateQuestion = async (song, allSongs) => {
+  const correctArtist = song.artist;
 
-exports.generateQuestion = async (songTitle) => {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+  const wrongArtists = allSongs
+    .filter(s => s.artist && s.artist !== correctArtist)
+    .map(s => s.artist);
 
-  const prompt = `
-You are a quiz generator. Given a Bollywood song title, you must create a trivia question about the artist, genre, year, or mood. 
-The output must be valid JSON like this:
-{
-  "question": "Who is the artist of 'Tum Se Hi'?",
-  "options": ["Atif Aslam", "Arijit Singh", "KK", "Mohit Chauhan"],
-  "answer": "Mohit Chauhan"
-}
-Only give the JSON object. No explanation.
+  let shuffledWrong = shuffleArray([...new Set(wrongArtists)]).slice(0, 3);
 
-Song: "${songTitle}"
-`;
-
-
-  try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const data = JSON.parse(text);
-
-    return {
-      question: data.question || `Who is the artist of "${songTitle}"?`,
-      options: shuffleArray(data.options),
-      correctAnswer: data.answer
-    };
-  } catch (err) {
-    console.error("Gemini API error:", err.message);
-    return {
-      question: `Who is the artist of "${songTitle}"?`,
-      options: ["Correct Artist", "Wrong A", "Wrong B", "Wrong C"],
-      correctAnswer: "Correct Artist"
-    };
+  while (shuffledWrong.length < 3) {
+    shuffledWrong.push("Unknown Artist " + (shuffledWrong.length + 1));
   }
+
+  const artistOptions = shuffleArray([correctArtist, ...shuffledWrong]);
+
+  return {
+    question: `Who is the artist of "${song.title}"?`,
+    options: artistOptions,
+    correctAnswer: correctArtist
+  };
 };
 
 function shuffleArray(array) {
-  return array.sort(() => 0.5 - Math.random());
+  return array
+    .map(value => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
 }

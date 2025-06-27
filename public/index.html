@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Music Guess Game Lobby</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center h-screen">
+  <div class="bg-gray-800 p-8 rounded-xl shadow-xl w-full max-w-md text-center">
+    <h1 class="text-2xl font-bold mb-6">🎵 Music Guess Game</h1>
+
+    <input id="username" type="text" placeholder="Enter your name"
+      class="w-full px-4 py-2 mb-4 rounded-md text-black" />
+
+    <div class="flex justify-between mb-4">
+      <button id="createBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md w-[48%]">
+        Create Room
+      </button>
+      <button id="joinBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md w-[48%]">
+        Join Room
+      </button>
+    </div>
+
+    <input id="room-code" type="text" placeholder="Enter Room Code"
+      class="w-full px-4 py-2 mb-4 rounded-md text-black hidden" />
+
+    <button id="submitBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md hidden w-full">
+      Submit
+    </button>
+
+    <p id="message" class="mt-4 text-yellow-300 font-medium"></p>
+
+  </div>
+  <div id="playerList" class="text-white mt-4 hidden">
+  <h3 class="font-semibold text-lg mb-2">🎮 Players in Room:</h3>
+  <ul id="playersUl"></ul>
+  </div>
+
+  <script>
+    const socket = io();
+    let mode = "";
+    const usernameInput = document.getElementById('username');
+    const roomInput = document.getElementById('room-code');
+    const messageBox = document.getElementById('message');
+    const playerList = document.getElementById("playerList");
+  const playersUl = document.getElementById("playersUl");
+    
+    document.getElementById("createBtn").onclick = () => {
+      mode = "create";
+      roomInput.classList.add("hidden");
+      document.getElementById("submitBtn").classList.remove("hidden");
+    };
+
+    document.getElementById("joinBtn").onclick = () => {
+      mode = "join";
+      roomInput.classList.remove("hidden");
+      document.getElementById("submitBtn").classList.remove("hidden");
+    };
+
+    document.getElementById("submitBtn").onclick = () => {
+      const username = usernameInput.value.trim();
+      const room = roomInput.value.trim();
+
+      if (!username) return alert("Please enter your name");
+
+      if (mode === "create") {
+        socket.emit("createRoom", { username });
+      } else if (mode === "join") {
+        if (!room) return alert("Enter room code");
+        socket.emit("joinRoom", { username, room });
+      }
+    };
+     socket.on("roomCreated", ({ roomCode }) => {
+      const username = usernameInput.value.trim();
+      window.location.href = `/lobby.html?room=${roomCode}&host=true&username=${encodeURIComponent(username)}`;
+    });
+      socket.on("roomJoined", ({ roomCode }) => {
+      const username = usernameInput.value.trim();
+      window.location.href = `/lobby.html?room=${roomCode}&host=false&username=${encodeURIComponent(username)}`;
+    });
+    socket.on("errorMessage", (msg) => {
+      messageBox.innerText = msg;
+    });
+
+    socket.on('updatePlayers', (usernames) => {
+    playerList.classList.remove("hidden");
+    playersUl.innerHTML = '';
+    usernames.forEach(name => {
+    const li = document.createElement("li");
+    li.textContent = `- ${name}`;
+    playersUl.appendChild(li);
+    });
+    });
+      
+  </script>
+
+  </body>
+</html>

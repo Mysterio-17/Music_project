@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🎮 Music Game</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body class="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 min-h-screen text-white flex flex-col items-center justify-center p-4">
+  <h1 class="text-3xl font-bold text-pink-500 mb-2">🎧 Music Guessing Round</h1>
+  <div id="timer" class="text-6xl font-bold text-yellow-400 animate-pulse mb-4">0</div>
+  <h2 id="question" class="text-xl text-center font-semibold mb-6 max-w-3xl"></h2>
+
+  <div id="options" class="grid grid-cols-2 gap-4 max-w-xl w-full mb-6"></div>
+
+  <div class="flex items-center justify-between w-full max-w-xl">
+    <span id="scoreDisplay" class="text-md text-white">Score: 0</span>
+    <button id="showLeaderboardBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow-md transition-all">
+      🏆 Leaderboard
+    </button>
+  </div>
+
+  <div id="player" class="hidden"></div>
+
+  <div id="leaderboardPopup" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white rounded-lg shadow-lg p-6 hidden z-50 transition-opacity duration-300 opacity-0">
+    <h2 class="text-xl font-bold mb-2">🏆 Leaderboard</h2>
+    <ul id="leaderboardPopupList" class="space-y-1 text-sm"></ul>
+  </div>
+
+  <div id="finalLeaderboard" class="fixed inset-0 bg-black bg-opacity-80 text-white flex items-center justify-center z-50 hidden">
+    <div class="bg-gray-900 rounded-xl p-8 w-full max-w-lg text-center shadow-lg">
+      <h2 class="text-2xl font-bold mb-4">🏁 Final Leaderboard</h2>
+      <ul id="finalLeaderboardList" class="space-y-2 text-left"></ul>
+      <button onclick="location.reload()" class="mt-6 bg-purple-600 px-4 py-2 rounded text-white hover:bg-purple-700">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get("room");
+    const username = urlParams.get("username");
+    let latestLeaderboard = {};
+
+    socket.emit("readyForGame", { roomCode, username });
+
+    let ytPlayer;
+    let interval;
+    let answered = false;
+
+    function startCountdown(seconds) {
+      const timer = document.getElementById("timer");
+      let time = seconds;
+      timer.textContent = time;
+
+      interval = setInterval(() => {
+        time--;
+        timer.textContent = time;
+        if (time <= 0) clearInterval(interval);
+      }, 1000);
+    }
+
+    function createPlayer(videoId, startTime) {
+      if (ytPlayer) {
+        ytPlayer.destroy();
+      }
+
+      ytPlayer = new YT.Player("player", {
+        height: "0",
+        width: "0",
+        videoId,
+        events: {
+          onReady: (event) => {
+            event.target.seekTo(startTime, true);
+            event.target.playVideo();
+          }
+        },
+        playerVars: {
+          autoplay: 0,
+          start: startTime,
+          end: startTime + 10
+        }
+      });
+    }
+
+    socket.on("newRound", ({ videoId, startTime, question, options }) => {
+      answered = false;
+      document.getElementById("question").textContent = question;
+
+      const opts = document.getElementById("options");
+      opts.innerHTML = '';
+
+      options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.textContent = opt;
+        btn.className = "bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg shadow-md text-lg font-medium transition duration-300 ease-in-out transform hover:-translate-y-1";
+        btn.onclick = () => {
+          if (answered) return;
+          answered = true;
+          btn.classList.add("bg-green-500", "selected");
+          socket.emit("submitAnswer", { roomCode, username, answer: opt });
+        };
+        opts.appendChild(btn);
+      });
+
+      createPlayer(videoId, startTime);
+      startCountdown(10);
+    });
+
+    socket.on("roundEnd", (scores) => {
+      console.log("Round ended, scores calculated.");
+    });
+
+    socket.on("updateLeaderboard", (leaderboard) => {
+      latestLeaderboard = leaderboard;
+      const popup = document.getElementById("leaderboardPopup");
+      const list = document.getElementById("leaderboardPopupList");
+
+      list.innerHTML = '';
+      const sorted = Object.entries(leaderboard).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+      sorted.forEach(([name, score], i) => {
+        const li = document.createElement("li");
+        li.textContent = `${i + 1}. ${name}: ${score}`;
+        list.appendChild(li);
+      });
+
+      popup.classList.remove("hidden");
+      setTimeout(() => popup.classList.add("show"), 10);
+
+      setTimeout(() => {
+        popup.classList.remove("show");
+        setTimeout(() => popup.classList.add("hidden"), 500);
+      }, 3000);
+    });
+
+    socket.on("gameOver", () => {
+      const modal = document.getElementById("finalLeaderboard");
+      const list = document.getElementById("finalLeaderboardList");
+
+      const sorted = Object.entries(latestLeaderboard).sort((a, b) => b[1] - a[1]);
+      list.innerHTML = '';
+
+      sorted.forEach(([name, score], i) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${i + 1}. ${name}</strong>: ${score} points`;
+        list.appendChild(li);
+      });
+
+      modal.classList.remove("hidden");
+      modal.classList.add("show");
+    });
+  </script>
+  <style>
+    #leaderboardPopup.show { opacity: 1; }
+    #leaderboardPopup { transition: opacity 0.5s ease-in-out; }
+    #finalLeaderboard.show {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</body>
+</html>

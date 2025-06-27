@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lobby Room</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center h-screen">
+  <h1 class="text-2xl font-bold mb-4">🎵 Lobby Room</h1>
+  <p id="roomCode" class="mb-2 text-yellow-300 font-semibold"></p>
+
+  <ul id="playersUl" class="list-disc mb-6"></ul>
+  <input id="playlistInput" type="text" placeholder="Paste YouTube Playlist URL"
+    class="w-full px-4 py-2 mb-4 rounded-md text-black max-w-md" />
+
+  <button id="loadPlaylistBtn"
+    class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded mb-4">
+    🎶 Load Playlist
+  </button>
+
+  <button id="startGameBtn" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded hidden">
+    ▶️ Start Game
+  </button>
+
+  <h2 id="question" class="text-xl font-semibold mb-2"></h2>
+  <div id="options" class="mb-4"></div>
+  <div id="player"></div>
+
+  <script>
+    const socket = io();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get("room");
+    const isHost = urlParams.get("host") === "true";
+    const username = urlParams.get("username");
+
+    socket.emit("joinRoom", { username, room: roomCode });
+    document.getElementById("roomCode").innerText = `Room Code: ${roomCode}`;
+
+    if (isHost) {
+      document.getElementById("startGameBtn").classList.remove("hidden");
+    }
+
+    document.getElementById("startGameBtn").onclick = () => {
+      const url = new URL(window.location.href);
+      const room = url.searchParams.get("room");
+      const username = url.searchParams.get("username");
+      window.open(`/game.html?room=${room}&username=${username}`, "_blank");
+
+      socket.emit("startGame", { roomCode });
+    };
+
+    document.getElementById("loadPlaylistBtn").onclick = () => {
+      const url = document.getElementById("playlistInput").value.trim();
+      if (!url) return alert("Paste a playlist URL");
+      const playlistId = extractPlaylistId(url);
+      if (!playlistId) return alert("Invalid playlist URL");
+      socket.emit("loadPlaylist", { playlistId, room: roomCode });
+    };
+
+    function extractPlaylistId(url) {
+      const match = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+      return match ? match[1] : null;
+    }
+
+    socket.on("updatePlayers", (usernames) => {
+      const playersUl = document.getElementById("playersUl");
+      playersUl.innerHTML = '';
+      usernames.forEach(name => {
+        const li = document.createElement("li");
+        li.textContent = name;
+        playersUl.appendChild(li);
+      });
+    });
+
+    socket.on("startGame", () => {
+      if (!isHost) {
+        window.location.href = `/game.html?room=${roomCode}&username=${username}`;
+      }
+    });
+    socket.on("gameStarted", () => {
+    window.location.href = `/game.html?room=${roomCode}&username=${username}`;
+     });
+
+    socket.on("newRound", ({ videoId, startTime, question, options }) => {
+      document.getElementById("question").innerText = question;
+      const opts = document.getElementById("options");
+      opts.innerHTML = '';
+      options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.textContent = opt;
+        btn.className = "bg-gray-700 hover:bg-gray-800 px-3 py-2 rounded mb-2 block";
+        btn.onclick = () => socket.emit("submitAnswer", {
+          roomCode,
+          username,
+          answer: opt
+        });
+        opts.appendChild(btn);
+      });
+
+      const player = new YT.Player('player', {
+        height: '0',
+        width: '0',
+        videoId: videoId,
+        playerVars: {
+          autoplay: 1,
+          start: startTime,
+          end: startTime + 10
+        }
+      });
+    });
+
+    socket.on("roundEnd", (scores) => {
+      alert("Round over! Check leaderboard.");
+    });
+  </script>
+</body>
+</html>

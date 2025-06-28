@@ -50,6 +50,7 @@
     let answered = false;
 
     function startCountdown(seconds) {
+      if (interval) clearInterval(interval);
       const timer = document.getElementById("timer");
       let time = seconds;
       timer.textContent = time;
@@ -62,6 +63,10 @@
     }
 
     function createPlayer(videoId, startTime) {
+      if (!window.YT || !window.YT.Player) {
+    console.error("YouTube API not loaded yet");
+    return;
+     }
       if (ytPlayer) {
         ytPlayer.destroy();
       }
@@ -122,6 +127,8 @@
       latestLeaderboard = leaderboard;
       const popup = document.getElementById("leaderboardPopup");
       const list = document.getElementById("leaderboardPopupList");
+      const currentScore = leaderboard[username] || 0;
+      document.getElementById("scoreDisplay").textContent = `Score: ${currentScore}`;
 
       list.innerHTML = '';
       const sorted = Object.entries(leaderboard).sort((a, b) => b[1] - a[1]).slice(0, 5);

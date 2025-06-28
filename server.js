@@ -4,11 +4,20 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+if (!process.env.YOUTUBE_API_KEY) {
+  console.error('❌ YOUTUBE_API_KEY is required');
+  process.exit(1);
+}
+
+if (!process.env.MONGO_URI) {
+  console.error('❌ MONGO_URI is required');
+  process.exit(1);
+}
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve static files
 app.use(express.static('public'));
 const debugRoutes = require('./src/routes/debug');
 app.use(debugRoutes);
@@ -17,15 +26,6 @@ app.use(debugRoutes);
 const roomSockets = require('./src/sockets/room');
 roomSockets(io);
 
-
-// Socket setup
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
-});
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,

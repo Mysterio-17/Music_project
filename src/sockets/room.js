@@ -40,29 +40,30 @@ module.exports = (io) => {
     });
 
     socket.on("loadPlaylist", async ({ playlistId, room }) => {
-      try {
-        const apiKey = process.env.YOUTUBE_API_KEY;
-        const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=10&playlistId=${playlistId}&key=${apiKey}`;
-        const { data } = await axios.get(url);
+     try {
+    const songs = await fetchSongsFromPlaylist(playlistId);
+    
+    // Add artist extraction
+    const songsWithArtists = songs.map(song => ({
+      ...song,
+      artist: extractArtistFromTitle(song.title)
+    }));
 
-        const songs = data.items.map(item => ({
-          title: item.snippet.title,
-          videoId: item.snippet.resourceId.videoId,
-           artist: extractArtistFromTitle(item.snippet.title)
-        }));
+    const selectedSongs = songsWithArtists
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 10);
+    
+    gameData[room] = { songs: selectedSongs, currentSongIndex: 0 };
 
-        const selectedSongs = songs.sort(() => 0.5 - Math.random()).slice(0, 10);
-        gameData[room] = { songs: selectedSongs, currentSongIndex: 0 };
+    await Playlist.findOneAndDelete({ roomCode: room });
+    await Playlist.create({ roomCode: room, songs: selectedSongs });
 
-        await Playlist.findOneAndDelete({ roomCode: room });
-        await Playlist.create({ roomCode: room, songs: selectedSongs });
-
-        console.log(`🎵 Saved ${selectedSongs.length} songs to DB for room: ${room}`);
-      } catch (err) {
-        console.error("Error loading playlist:", err.message);
-        socket.emit("errorMessage", "Failed to load playlist");
-      }
-    });
+    console.log(`🎵 Saved ${selectedSongs.length} songs to DB for room: ${room}`);
+   } catch (err) {
+    console.error("Error loading playlist:", err.message);
+    socket.emit("errorMessage", "Failed to load playlist");
+    }
+  });
 
     socket.on("startGame", async ({ roomCode }) => {
       const playlist = await Playlist.findOne({ roomCode });
@@ -81,9 +82,15 @@ module.exports = (io) => {
 
     async function startNextRound(roomCode, io, songs) {
       const round = currentRounds[roomCode];
+      if (round.isRoundActive) {
+      console.log("Round already active, skipping...");
+      return;
+      }
       if (round.currentSongIndex >= songs.length) {
+        delete currentRounds[roomCode];
         return io.to(roomCode).emit("gameOver");
       }
+      round.isRoundActive = true;
 
       const song = songs[round.currentSongIndex];
       const questionData = await generateQuestion(song, songs, round.currentSongIndex);
@@ -100,6 +107,7 @@ module.exports = (io) => {
       });
 
       setTimeout(() => {
+        round.isRoundActive = false;
         const scores = calculateScores(round.responses, round.startTime, round.correctAnswer);
         updateLeaderboard(roomCode, scores);
         io.to(roomCode).emit("roundEnd", scores);
@@ -158,10 +166,33 @@ module.exports = (io) => {
   }
 };
 function extractArtistFromTitle(title) {
-  if (!title) return null;
-  const parts = title.split(" - ");
-  if (parts.length > 1) {
-    return parts[1].split("|")[0].trim();
+  if (!title) return "Unknown Artist";
+  
+  let artist = null;
+  
+  if (title.includes(" - ")) {
+    const parts = title.split(" - ");
+    artist = parts[0].trim();
   }
-  return null;
+  else if (title.includes(": ")) {
+    const parts = title.split(": ");
+    artist = parts[0].trim();
+  }
+  else {
+    const match = title.match(/\(([^)]+)\)|\[([^\]]+)\]/);
+    if (match) {
+      artist = (match[1] || match[2]).trim();
+    }
+  }
+  
+  if (artist) {
+    artist = artist
+      .replace(/\(official.*\)/gi, '')
+      .replace(/\[official.*\]/gi, '')
+      .replace(/official.*video/gi, '')
+      .replace(/HD|4K|lyrics/gi, '')
+      .trim();
+  }
+  
+  return artist || "Unknown Artist";
 }

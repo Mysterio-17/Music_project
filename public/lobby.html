@@ -84,34 +84,6 @@
     window.location.href = `/game.html?room=${roomCode}&username=${username}`;
      });
 
-    socket.on("newRound", ({ videoId, startTime, question, options }) => {
-      document.getElementById("question").innerText = question;
-      const opts = document.getElementById("options");
-      opts.innerHTML = '';
-      options.forEach(opt => {
-        const btn = document.createElement("button");
-        btn.textContent = opt;
-        btn.className = "bg-gray-700 hover:bg-gray-800 px-3 py-2 rounded mb-2 block";
-        btn.onclick = () => socket.emit("submitAnswer", {
-          roomCode,
-          username,
-          answer: opt
-        });
-        opts.appendChild(btn);
-      });
-
-      const player = new YT.Player('player', {
-        height: '0',
-        width: '0',
-        videoId: videoId,
-        playerVars: {
-          autoplay: 1,
-          start: startTime,
-          end: startTime + 10
-        }
-      });
-    });
-
     socket.on("roundEnd", (scores) => {
       alert("Round over! Check leaderboard.");
     });

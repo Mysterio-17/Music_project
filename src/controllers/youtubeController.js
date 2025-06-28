@@ -14,7 +14,8 @@ async function fetchSongsFromPlaylist(playlistId) {
       items.forEach((item) => {
         const title = item.snippet.title;
         const videoId = item.snippet.resourceId.videoId;
-        songs.push({ title, videoId });
+        const artist = item.snippet.channelTitle; 
+        songs.push({ title, videoId, artist });
       });
 
       nextPageToken = res.data.nextPageToken || null;
@@ -27,4 +28,15 @@ async function fetchSongsFromPlaylist(playlistId) {
   }
 }
 
-module.exports = { fetchSongsFromPlaylist };
+async function fetchChannelTitle(videoId) {
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`;
+    const res = await axios.get(url);
+    return res.data.items[0]?.snippet?.channelTitle || "Unknown Artist";
+  } catch (err) {
+    console.error("Failed to fetch channel title:", err.message);
+    return "Unknown Artist";
+  }
+}
+
+module.exports = { fetchSongsFromPlaylist, fetchChannelTitle };

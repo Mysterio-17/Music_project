@@ -1,32 +1,24 @@
 function extractArtistFromTitle(title) {
   if (!title) return "Unknown Artist";
-  
-  let artist = null;
-  
-  if (title.includes(" - ")) {
-    const parts = title.split(" - ");
-    artist = parts[0].trim();
-  }
-  else if (title.includes(": ")) {
-    const parts = title.split(": ");
-    artist = parts[0].trim();
-  }
-  else {
-    const match = title.match(/\(([^)]+)\)|\[([^\]]+)\]/);
-    if (match) {
-      artist = (match[1] || match[2]).trim();
+
+  title = title.replace(/ *\([^)]*\) */g, "")  
+               .replace(/ *\[[^\]]*\] */g, "")   
+               .replace(/(official|video|lyrics|HD|4K|remix|audio)/gi, "")
+               .replace(/ft\.|feat\.|featuring/gi, "") 
+               .replace(/[\u{1F600}-\u{1F64F}]/gu, "") 
+               .trim();
+
+  const separators = [' - ', ' | ', ': ', ' – '];
+  for (const sep of separators) {
+    if (title.includes(sep)) {
+      const parts = title.split(sep);
+      if (parts[0].length > 1) {
+        return parts[0].trim();
+      }
     }
   }
-  
-  if (artist) {
-    artist = artist
-      .replace(/\(official.*\)/gi, '')
-      .replace(/\[official.*\]/gi, '')
-      .replace(/official.*video/gi, '')
-      .replace(/HD|4K|lyrics/gi, '')
-      .trim();
-  }
-  
-  return artist || "Unknown Artist";
+
+  return "Unknown Artist";
 }
+
 module.exports = extractArtistFromTitle;

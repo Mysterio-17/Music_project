@@ -43,7 +43,6 @@ module.exports = (io) => {
      try {
     const songs = await fetchSongsFromPlaylist(playlistId);
     
-    // Add artist extraction
     const songsWithArtists = songs.map(song => ({
       ...song,
       artist: extractArtistFromTitle(song.title)
@@ -59,6 +58,8 @@ module.exports = (io) => {
     await Playlist.create({ roomCode: room, songs: selectedSongs });
 
     console.log(`🎵 Saved ${selectedSongs.length} songs to DB for room: ${room}`);
+    console.log("Extracted artist:", song.title, "→", extractArtistFromTitle(song.title));
+
    } catch (err) {
     console.error("Error loading playlist:", err.message);
     socket.emit("errorMessage", "Failed to load playlist");
@@ -165,34 +166,4 @@ module.exports = (io) => {
     return Math.random().toString(36).substring(2, 2 + length).toUpperCase();
   }
 };
-function extractArtistFromTitle(title) {
-  if (!title) return "Unknown Artist";
-  
-  let artist = null;
-  
-  if (title.includes(" - ")) {
-    const parts = title.split(" - ");
-    artist = parts[0].trim();
-  }
-  else if (title.includes(": ")) {
-    const parts = title.split(": ");
-    artist = parts[0].trim();
-  }
-  else {
-    const match = title.match(/\(([^)]+)\)|\[([^\]]+)\]/);
-    if (match) {
-      artist = (match[1] || match[2]).trim();
-    }
-  }
-  
-  if (artist) {
-    artist = artist
-      .replace(/\(official.*\)/gi, '')
-      .replace(/\[official.*\]/gi, '')
-      .replace(/official.*video/gi, '')
-      .replace(/HD|4K|lyrics/gi, '')
-      .trim();
-  }
-  
-  return artist || "Unknown Artist";
-}
+const extractArtistFromTitle = require("../utils/extractArtist");

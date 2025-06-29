@@ -55,7 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("📩 New round received:", { videoId, question, options });
 
     answered = false;
-    document.getElementById("question").textContent = question;
+    document.getElementById("question").textContent = "🎧 Guess the name of this song!";
+
 
     const opts = document.getElementById("options");
     opts.innerHTML = '';
@@ -77,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     createPlayer(videoId, startTime);
-    startCountdown(10);
+    startCountdown(7);
   });
 
   socket.on("roundEnd", (scores) => {

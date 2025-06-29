@@ -1,5 +1,5 @@
 const express = require('express');
-const Playlist = require('../models/playlist');
+const Playlist = require('../models/SongList');
 const router = express.Router();
 
 router.get('/debug/playlists', async (req, res) => {

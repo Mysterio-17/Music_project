@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const SongSchema = new mongoose.Schema({
   title: String,
   videoId: String,
-  duration: String,
 });
 
 const PlaylistSchema = new mongoose.Schema({
@@ -12,4 +11,4 @@ const PlaylistSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Playlist', PlaylistSchema);
+module.exports = mongoose.model('SongList', PlaylistSchema);

@@ -1,12 +1,22 @@
 const mongoose = require('mongoose');
 
+const playerSchema = new mongoose.Schema({
+  username: String,
+  socketId: String,
+  score: {
+    type: Number,
+    default: 0
+  }
+});
+
 const roomSchema = new mongoose.Schema({
-  code: String,
-  players: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Player' }],
+  roomCode: { type: String, required: true, unique: true },
+  host: String,
+  players: [playerSchema],
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 3600 // Room expires in 1 hour
+    expires: 3600 
   }
 });
 

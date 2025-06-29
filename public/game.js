@@ -34,8 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     ytPlayer = new YT.Player("player", {
-      height: "0",
-      width: "0",
+      height: "360",
+      width: "640",
       videoId,
       events: {
         onReady: (event) => {

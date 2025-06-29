@@ -7,26 +7,38 @@ const leaderboard = {};
 
 module.exports = {
   async startGame(io, socket, { roomCode }) {
+    console.log("🔥 startGame called for room:", roomCode);
     const playlist = await Playlist.findOne({ roomCode });
+    console.log("Playlist:", playlist);
+    console.log("Songs length:", playlist?.songs?.length);
+
+    
     if (!playlist || playlist.songs.length === 0) {
       return socket.emit("errorMessage", "No playlist found for this room.");
     }
+    if (currentRounds[roomCode] && currentRounds[roomCode].isGameStarted) {
+       console.log(`Game for room ${roomCode} is already started.`);
+       return; // Game already in progress, prevent starting again
+     }
 
     io.to(roomCode).emit("gameStarted");
     currentRounds[roomCode] = {
       currentSongIndex: 0,
-      responses: {}
+      responses: {},
+      isGameStarted: true, 
+      isRoundActive: false
     };
 
     startNextRound(roomCode, io, playlist.songs);
   },
 
-  submitAnswer({ roomCode, username, answer }) {
-    const round = currentRounds[roomCode];
-    if (!round) return;
-    const responseTime = Date.now() - round.startTime;
-    round.responses[username] = { answer, time: responseTime };
-  },
+   submitAnswer({ roomCode, username, answer }) {
+        const round = currentRounds[roomCode];
+        if (!round || round.answered) return; 
+        const responseTime = Date.now() - round.startTime;
+        round.responses[username] = { answer, time: responseTime };
+        round.answered = true;
+    },
 
   readyForGame(socket, { roomCode }) {
     socket.join(roomCode);
@@ -35,7 +47,14 @@ module.exports = {
 
 async function startNextRound(roomCode, io, songs) {
   const round = currentRounds[roomCode];
-  if (round.isRoundActive) return;
+  const song = songs[round.currentSongIndex];
+  console.log("🎵 Starting round for song index:", round.currentSongIndex);
+  console.log("Song:", song);
+
+  if (round.isRoundActive){
+     console.warn(`Attempted to start a new round for room ${roomCode} while one is already active.`);
+     return;
+  } 
 
   if (round.currentSongIndex >= songs.length) {
     delete currentRounds[roomCode];
@@ -43,7 +62,8 @@ async function startNextRound(roomCode, io, songs) {
   }
 
   round.isRoundActive = true;
-  const song = songs[round.currentSongIndex];
+  
+    
   const questionData = await generateQuestion(song, songs, round.currentSongIndex);
 
   round.correctAnswer = questionData.correctAnswer;

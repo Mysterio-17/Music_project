@@ -1,6 +1,6 @@
 const Playlist = require('../../models/playlist');
 const { fetchSongsFromPlaylist } = require("../../controllers/youtubeController");
-const extractArtistFromTitle = require("../../utils/extractArtist");
+const getAccurateArtistFromTitle = require("../../utils/extractArtist");
 
 const gameData = {};
 
@@ -14,7 +14,7 @@ module.exports = {
         songs.map(async (song) => {
           let artist = song.artist?.trim();
           if (!artist || artist.toLowerCase().includes("unknown")) {
-            artist = extractArtistFromTitle(song.title);
+            artist = getAccurateArtistFromTitle(song.title);
           }
           return { ...song, artist: artist || "Unknown Artist" };
         })

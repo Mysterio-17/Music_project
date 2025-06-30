@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <title>Lobby Room</title>
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center h-screen">
   <h1 class="text-2xl font-bold mb-4">🎵 Lobby Room</h1>
   <p id="roomCode" class="mb-2 text-yellow-300 font-semibold"></p>
+<div id="particles-js" class="fixed top-0 left-0 w-full h-full -z-10"></div>
 
   <ul id="playersUl" class="list-disc mb-6"></ul>
   <input id="playlistInput" type="text" placeholder="Paste YouTube Playlist URL"
@@ -22,6 +25,16 @@
   <button id="startGameBtn" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded hidden">
     ▶️ Start Game
   </button>
+  <style>
+  #particles-js {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: -10;
+    top: 0;
+    left: 0;
+  }
+</style>
 
     <script>
     const socket = io();
@@ -77,5 +90,22 @@
       alert("Round over! Check leaderboard.");
     });
   </script>
+<script>
+  particlesJS("particles-js", {
+    particles: {
+      number: { value: 100 },
+      size: { value: 2 },
+      color: { value: "#ffffff" },
+      opacity: { value: 0.7 },
+      move: { speed: 0.3 },
+      line_linked: { enable: false }
+    },
+    interactivity: {
+      detect_on: "canvas",
+      events: { onhover: { enable: false }, onclick: { enable: false } }
+    }
+  });
+</script>
+
 </body>
 </html>

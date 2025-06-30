@@ -3,23 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <title>🎮 Music Game</title>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body class="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 min-h-screen text-white flex flex-col items-center justify-center p-4">
   <h1 class="text-3xl font-bold text-pink-500 mb-2">🎵 Guess the Song Title</h1>
+<div id="particles-js" class="fixed top-0 left-0 w-full h-full -z-10"></div>
+
   <div id="timer" class="text-6xl font-bold text-yellow-400 animate-pulse mb-4">0</div>
   <h2 id="question" class="text-xl text-center font-semibold mb-6 max-w-3xl"></h2>
 
   <div id="options" class="grid grid-cols-2 gap-4 max-w-xl w-full mb-6"></div>
 
-  <!-- <div class="flex items-center justify-between w-full max-w-xl">
+  <div class="flex items-center justify-between w-full max-w-xl">
     <span id="scoreDisplay" class="text-md text-white">Score: 0</span>
     <button id="showLeaderboardBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow-md transition-all">
       🏆 Leaderboard
     </button>
-  </div> -->
+  </div>
 
   <div id="player" class="hidden"></div>
 
@@ -37,6 +41,7 @@
   </div>
 
  <style>
+
   #leaderboardPopup {
     opacity: 0;
     transition: opacity 0.5s ease-in-out;
@@ -56,6 +61,15 @@
     from { opacity: 0; transform: scale(0.9); }
     to { opacity: 1; transform: scale(1); }
   }
+  #particles-js {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: -10;
+    top: 0;
+    left: 0;
+  }
+
 </style>
 
   <script>
@@ -199,5 +213,22 @@
       });
     });
   </script>
+<script>
+  particlesJS("particles-js", {
+    particles: {
+      number: { value: 100 },
+      size: { value: 2 },
+      color: { value: "#ffffff" },
+      opacity: { value: 0.7 },
+      move: { speed: 0.3 },
+      line_linked: { enable: false }
+    },
+    interactivity: {
+      detect_on: "canvas",
+      events: { onhover: { enable: false }, onclick: { enable: false } }
+    }
+  });
+</script>
+
 </body>
 </html>

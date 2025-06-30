@@ -69,7 +69,7 @@
         socket.emit("createRoom", { username });
       } else if (mode === "join") {
         if (!room) return alert("Enter room code");
-        socket.emit("joinRoom", { username, room });
+        socket.emit("joinRoom", { username,roomCode: room });
       }
     };
      socket.on("roomCreated", ({ roomCode }) => {

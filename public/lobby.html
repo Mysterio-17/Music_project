@@ -31,7 +31,8 @@
     const isHost = urlParams.get("host") === "true";
     const username = urlParams.get("username");
 
-    socket.emit("joinRoom", { username, room: roomCode });
+    socket.emit("joinRoom", { username, roomCode });
+
     document.getElementById("roomCode").innerText = `Room Code: ${roomCode}`;
 
     if (isHost) {

@@ -28,7 +28,28 @@ function generateFakeTitles(correctTitle, songs) {
   }
   return randoms;
 }
+async function calculateScoresAndUpdate(roomCode, responses, correctAnswer) {
+  const Room = require('../models/Room');
+  const room = await Room.findOne({ roomCode });
+  if (!room) return {};
 
+  for (const player of room.players) {
+    const userResp = responses[player.username];
+    if (!userResp) continue;
+
+    const isCorrect = userResp.answer === correctAnswer;
+    if (isCorrect) {
+      const timeBonus = Math.max(0, 7000 - userResp.time); 
+      const points = 300 + Math.floor(timeBonus / 100);    
+      player.score += points;
+    }
+  }
+
+  await room.save();
+  const leaderboard = {};
+  room.players.forEach(p => leaderboard[p.username] = p.score);
+  return leaderboard;
+}
 async function startNextRound(roomCode, io, songs) {
   const round = currentRounds[roomCode];
   const song = songs[round.currentSongIndex];
@@ -37,7 +58,9 @@ async function startNextRound(roomCode, io, songs) {
 
   round.isRoundActive = true;
   round.answered = false;
-
+  
+  const startTime = 30 + Math.floor(Math.random() * 60);
+  
   const questionData = {
     question: "Guess the name of this song!",
     options: shuffleArray([
@@ -55,13 +78,16 @@ async function startNextRound(roomCode, io, songs) {
     question: questionData.question,
     options: questionData.options,
     videoId: song.videoId,
-    startTime: 0
+    startTime
   });
 
-  setTimeout(() => {
+  setTimeout(async () => {
     if (!round.isRoundActive) return;
 
+    const leaderboard = await calculateScoresAndUpdate(roomCode, round.responses, questionData.correctAnswer);
+
     io.to(roomCode).emit("roundEnd", round.responses);
+    io.to(roomCode).emit("updateLeaderboard", leaderboard);
     round.isRoundActive = false;
 
     setTimeout(() => {
@@ -69,12 +95,15 @@ async function startNextRound(roomCode, io, songs) {
       if (round.currentSongIndex >= songs.length) {
         delete currentRounds[roomCode];
         delete gameData[roomCode];
+
+        io.to(roomCode).emit("updateLeaderboard", leaderboard);
         return io.to(roomCode).emit("gameOver");
       }
+
       startNextRound(roomCode, io, songs);
     }, 3000);
 
-  }, 7000); 
+  }, 7000);; 
 }
 
 module.exports = (io) => {
@@ -108,6 +137,7 @@ module.exports = (io) => {
 
         socket.join(roomCode);
         io.to(roomCode).emit("updatePlayers", room.players.map(p => p.username));
+        socket.emit("roomJoined", { roomCode });
       } catch (err) {
         socket.emit("errorMessage", "Failed to join room.");
       }

@@ -15,7 +15,7 @@ async function fetchSongsFromPlaylist(playlistId) {
         const title = item.snippet.title;
         const videoId = item.snippet.resourceId.videoId;
         const artist = item.snippet.channelTitle; 
-        songs.push({ title, videoId });
+        songs.push({ title, videoId, artist });
       });
 
       nextPageToken = res.data.nextPageToken || null;

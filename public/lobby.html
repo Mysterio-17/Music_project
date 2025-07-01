@@ -1,111 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Lobby Room</title>
-<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-<body class="bg-gray-900 text-white flex flex-col items-center justify-center h-screen">
-  <h1 class="text-2xl font-bold mb-4">🎵 Lobby Room</h1>
-  <p id="roomCode" class="mb-2 text-yellow-300 font-semibold"></p>
-<div id="particles-js" class="fixed top-0 left-0 w-full h-full -z-10"></div>
-
-  <ul id="playersUl" class="list-disc mb-6"></ul>
-  <input id="playlistInput" type="text" placeholder="Paste YouTube Playlist URL"
-    class="w-full px-4 py-2 mb-4 rounded-md text-black max-w-md" />
-
-  <button id="loadPlaylistBtn"
-    class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded mb-4">
-    🎶 Load Playlist
-  </button>
-
-  <button id="startGameBtn" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded hidden">
-    ▶️ Start Game
-  </button>
+  <meta charset="UTF-8" />
+  <title>Lobby Room</title>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-  #particles-js {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    z-index: -10;
-    top: 0;
-    left: 0;
-  }
-</style>
-
-    <script>
-    const socket = io();
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomCode = urlParams.get("room");
-    const isHost = urlParams.get("host") === "true";
-    const username = urlParams.get("username");
-
-    socket.emit("joinRoom", { username, roomCode });
-
-    document.getElementById("roomCode").innerText = `Room Code: ${roomCode}`;
-
-    if (isHost) {
-      document.getElementById("startGameBtn").classList.remove("hidden");
-    }
-
-    document.getElementById("startGameBtn").onclick = () => {
-      socket.emit("startGame", { roomCode: roomCode });
-      console.log("🚀 startGame emitted to server");
-    };
-
-    document.getElementById("loadPlaylistBtn").onclick = () => {
-  console.log("🎬 loadPlaylist clicked");
-      const url = document.getElementById("playlistInput").value.trim();
-      if (!url) return alert("Paste a playlist URL");
-      const playlistId = extractPlaylistId(url);
-      if (!playlistId) return alert("Invalid playlist URL");
-      socket.emit("loadPlaylist", { playlistId, room: roomCode });
-    };
-
-    socket.on("gameStarted", () => {
-      console.log("Game started! Redirecting to game.html");
-      window.location.href = `/game.html?room=${roomCode}&username=${username}`;
-    });
-
-    function extractPlaylistId(url) {
-      const match = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-      return match ? match[1] : null;
-    }
-
-    socket.on("updatePlayers", (usernames) => {
-      const playersUl = document.getElementById("playersUl");
-      playersUl.innerHTML = '';
-      usernames.forEach(name => {
-        const li = document.createElement("li");
-        li.textContent = name;
-        playersUl.appendChild(li);
-      });
-    });
-
-    socket.on("roundEnd", (scores) => {
-      alert("Round over! Check leaderboard.");
-    });
-  </script>
-<script>
-  particlesJS("particles-js", {
-    particles: {
-      number: { value: 100 },
-      size: { value: 2 },
-      color: { value: "#ffffff" },
-      opacity: { value: 0.7 },
-      move: { speed: 0.3 },
-      line_linked: { enable: false }
-    },
-    interactivity: {
-      detect_on: "canvas",
-      events: { onhover: { enable: false }, onclick: { enable: false } }
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: -10;
+      top: 0;
+      left: 0;
     }
-  });
-</script>
+  </style>
+</head>
+<body class="bg-gray-900 text-white h-screen overflow-hidden relative">
+  <div id="particles-js" class="fixed top-0 left-0 w-full h-full -z-10"></div>
 
+  <div class="absolute top-6 right-6 bg-gray-800 px-6 py-4 rounded-lg shadow-lg w-[250px]">
+    <h2 class="text-lg font-bold mb-2">👥 Players in Lobby</h2>
+    <ul id="playersUl" class="list-disc list-inside space-y-1 text-sm"></ul>
+  </div>
+
+  <div class="flex flex-col items-center justify-center h-full">
+    <h1 class="text-3xl font-bold mb-2 text-pink-400">🎵 Lobby Room</h1>
+    <p id="roomCode" class="mb-6 text-yellow-300 font-semibold"></p>
+
+    <div class="flex flex-col items-center w-[500px] max-w-full">
+      <input id="playlistInput" type="text" placeholder="Paste YouTube Playlist URL"
+        class="w-full px-4 py-2 mb-4 rounded-md text-black" />
+
+      <button id="loadPlaylistBtn"
+        class="w-[250px] bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded mb-3">
+        🎶 Load Playlist
+      </button>
+
+      <button id="startGameBtn"
+        class="w-[250px]  bg-green-500 hover:bg-green-600 px-4 py-2 rounded hidden">
+        ▶️ Start Game
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get("room");
+    const isHost = urlParams.get("host") === "true";
+    const username = urlParams.get("username");
+
+    socket.emit("joinRoom", { username, roomCode });
+
+    document.getElementById("roomCode").innerText = `Room Code: ${roomCode}`;
+
+    if (isHost) {
+      document.getElementById("startGameBtn").classList.remove("hidden");
+    }
+
+    document.getElementById("startGameBtn").onclick = () => {
+      socket.emit("startGame", { roomCode: roomCode });
+      console.log("🚀 startGame emitted to server");
+    };
+
+    document.getElementById("loadPlaylistBtn").onclick = () => {
+      const url = document.getElementById("playlistInput").value.trim();
+      if (!url) return alert("Paste a playlist URL");
+      const playlistId = extractPlaylistId(url);
+      if (!playlistId) return alert("Invalid playlist URL");
+      socket.emit("loadPlaylist", { playlistId, room: roomCode });
+    };
+
+    function extractPlaylistId(url) {
+      const match = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+      return match ? match[1] : null;
+    }
+
+    socket.on("gameStarted", () => {
+      console.log("Game started! Redirecting to game.html");
+      window.location.href = `/game.html?room=${roomCode}&username=${username}`;
+    });
+
+    socket.on("updatePlayers", (usernames) => {
+      const playersUl = document.getElementById("playersUl");
+      playersUl.innerHTML = '';
+      usernames.forEach(name => {
+        const li = document.createElement("li");
+        li.textContent = name;
+        playersUl.appendChild(li);
+      });
+    });
+  </script>
+
+  <script>
+    particlesJS("particles-js", {
+      particles: {
+        number: { value: 100 },
+        size: { value: 2 },
+        color: { value: "#ffffff" },
+        opacity: { value: 0.7 },
+        move: { speed: 0.3 },
+        line_linked: { enable: false }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: { onhover: { enable: false }, onclick: { enable: false } }
+      }
+    });
+  </script>
 </body>
 </html>

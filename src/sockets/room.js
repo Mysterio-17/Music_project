@@ -97,7 +97,7 @@ async function startNextRound(roomCode, io, songs) {
         delete gameData[roomCode];
 
         io.to(roomCode).emit("updateLeaderboard", leaderboard);
-        return io.to(roomCode).emit("gameOver");
+        return io.to(roomCode).emit("gameOver", leaderboard);
       }
 
       startNextRound(roomCode, io, songs);

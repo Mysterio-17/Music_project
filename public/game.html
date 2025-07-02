@@ -40,7 +40,7 @@
     <div class="bg-gray-800 rounded-xl p-6 sm:p-8 w-full max-w-lg mx-4 text-center shadow-lg">
       <h2 class="text-2xl sm:text-3xl font-bold mb-6">🏁 Final Leaderboard</h2>
       <ul id="finalLeaderboardList" class="space-y-4 text-left text-sm sm:text-base"></ul>
-      <button onclick="location.reload()" class="mt-6 bg-purple-600 px-4 py-2 rounded text-white hover:bg-purple-700">Play Again</button>
+      <!-- <button onclick="location.reload()" class="mt-6 bg-purple-600 px-4 py-2 rounded text-white hover:bg-purple-700">Play Again</button> -->
     </div>
   </div>
 
@@ -187,6 +187,7 @@
       });
 
     socket.on("updateLeaderboard", (leaderboard) => {
+     latestLeaderboard = leaderboard;
    const popup = document.getElementById("leaderboardPopup");
    const list = document.getElementById("leaderboardPopupList");
     list.innerHTML = '';
@@ -223,23 +224,39 @@
   }, 2000);
   });
 
+   socket.on("gameOver", (leaderboard) => {
+  const modal = document.getElementById("finalLeaderboard");
+  const list = document.getElementById("finalLeaderboardList");
+  list.innerHTML = '';
 
-      socket.on("gameOver", () => {
-        const modal = document.getElementById("finalLeaderboard");
-        const list = document.getElementById("finalLeaderboardList");
+    const roundsPlayed = 10; 
+   const totalPossiblePoints = roundsPlayed * 700;
 
-        const sorted = Object.entries(latestLeaderboard).sort((a, b) => b[1] - a[1]);
-        list.innerHTML = '';
+   const sorted = Object.entries(leaderboard).sort((a, b) => b[1] - a[1]);
 
-        sorted.forEach(([name, score], i) => {
-          const li = document.createElement("li");
-          li.innerHTML = `<strong>${i + 1}. ${name}</strong>: ${score} points`;
-          list.appendChild(li);
-        });
+    sorted.forEach(([name, score], i) => {
+    const percent = Math.round((score / totalPossiblePoints) * 100);
+    const crown = i === 0 ? '<span class="mr-2">👑</span>' : '';
 
-        modal.classList.remove("hidden");
-        modal.classList.add("show");
-      });
+    const li = document.createElement("li");
+    li.className = "p-4 bg-gray-700 rounded-xl hover:bg-gray-600 transition leaderboard-row";
+    li.innerHTML = `
+      <div class="flex items-center justify-between mb-1">
+        <span class="font-semibold ${i === 0 ? 'text-yellow-300' : 'text-white'}">${crown}${i + 1}. ${name}</span>
+        <span class="text-sm text-gray-300">${score} pts</span>
+      </div>
+      <div class="w-full h-2 bg-gray-600 rounded-full overflow-hidden">
+        <div class="h-full bg-green-400 transition-all duration-500" style="width: ${percent}%;"></div>
+      </div>
+    `;
+    list.appendChild(li);
+  });
+
+    modal.classList.remove("hidden");
+    modal.classList.add("show");
+  });
+
+
     });
   </script>
 <script>

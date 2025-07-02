@@ -1,47 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>🎮 Music Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BeatQuest</title>
   <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
-
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body class="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 min-h-screen text-white flex flex-col items-center justify-center p-4">
-  <header class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
-  <img src="/images/BeatQuest (2).png" alt="BeatQuest Logo" class="h-60" />
+
+<header class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-48 sm:w-64 md:w-80 lg:w-96">
+  <img src="/images/BeatQuest (2).png" alt="BeatQuest Logo" class="w-full" />
 </header>
 
-  <h1 class="text-3xl font-bold text-pink-500 mb-2">🎵 Guess the Song Title</h1>
-<div id="particles-js" class="fixed top-0 left-0 w-full h-full -z-10"></div>
 
-  <div id="timer" class="text-6xl font-bold text-yellow-400 animate-pulse mb-4">0</div>
-  <h2 id="question" class="text-xl text-center font-semibold mb-6 max-w-3xl"></h2>
+  <div id="particles-js" class="fixed top-0 left-0 w-full h-full -z-10"></div>
 
-  <div id="options" class="grid grid-cols-2 gap-4 max-w-xl w-full mb-6"></div>
+  <main class="mt-32 w-full max-w-4xl flex flex-col items-center justify-center text-center px-4">
+    <h1 class="text-3xl sm:text-4xl font-bold text-pink-500 mb-2">🎵 Guess the Song Title</h1>
+    <div id="timer" class="text-5xl sm:text-6xl font-bold text-yellow-400 animate-pulse mb-4">0</div>
+    <h2 id="question" class="text-lg sm:text-xl font-semibold mb-6 max-w-2xl"></h2>
 
-  <div class="flex items-center justify-between w-full max-w-xl">
-    <span id="scoreDisplay" class="text-md text-white">Score: 0</span>
-    <button id="showLeaderboardBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow-md transition-all">
-      🏆 Leaderboard
-    </button>
-  </div>
+    <div id="options" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mb-6 px-2"></div>
+  </main>
 
   <div id="player" class="hidden"></div>
 
-  <div id="leaderboardPopup" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white rounded-lg shadow-lg p-6 hidden z-50 transition-opacity duration-300 opacity-0">
-    <h2 class="text-xl font-bold mb-2">🏆 Leaderboard</h2>
-    <ul id="leaderboardPopupList" class="space-y-1 text-sm"></ul>
+  <div id="leaderboardPopup" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+    <div class="bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-xl mx-4">
+      <h2 class="text-2xl font-bold text-center mb-6 text-yellow-400">🏆 Leaderboard</h2>
+      <ul id="leaderboardPopupList" class="space-y-4"></ul>
+    </div>
   </div>
 
-  <div id="finalLeaderboard" class="fixed inset-0 bg-black bg-opacity-80 text-white flex items-center justify-center z-50 hidden">
-    <div class="bg-gray-900 rounded-xl p-8 w-full max-w-lg text-center shadow-lg">
-      <h2 class="text-2xl font-bold mb-4">🏁 Final Leaderboard</h2>
-      <ul id="finalLeaderboardList" class="space-y-2 text-left"></ul>
+  <div id="finalLeaderboard" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden">
+    <div class="bg-gray-800 rounded-xl p-6 sm:p-8 w-full max-w-lg mx-4 text-center shadow-lg">
+      <h2 class="text-2xl sm:text-3xl font-bold mb-6">🏁 Final Leaderboard</h2>
+      <ul id="finalLeaderboardList" class="space-y-4 text-left text-sm sm:text-base"></ul>
       <button onclick="location.reload()" class="mt-6 bg-purple-600 px-4 py-2 rounded text-white hover:bg-purple-700">Play Again</button>
     </div>
   </div>
@@ -77,6 +75,13 @@
     z-index: -10;
     top: 0;
     left: 0;
+  }
+
+  .leaderboard-row {
+    transition: background-color 0.3s ease;
+  }
+  .leaderboard-row:hover {
+    background-color: #374151; 
   }
 
 </style>
@@ -177,32 +182,47 @@
 
       socket.on("roundEnd", (scores) => {
         console.log("Round ended, scores calculated.");
-        const currentScore = leaderboard[username] || 0;
-         document.getElementById("scoreDisplay").textContent = `Score: ${currentScore}`;
+        // const currentScore = leaderboard[username] || 0;
+        //  document.getElementById("scoreDisplay").textContent = `Score: ${currentScore}`;
       });
 
-      socket.on("updateLeaderboard", (leaderboard) => {
-        latestLeaderboard = leaderboard;
-        const popup = document.getElementById("leaderboardPopup");
-        const list = document.getElementById("leaderboardPopupList");
+    socket.on("updateLeaderboard", (leaderboard) => {
+   const popup = document.getElementById("leaderboardPopup");
+   const list = document.getElementById("leaderboardPopupList");
+    list.innerHTML = '';
 
-        list.innerHTML = '';
-        const sorted = Object.entries(leaderboard).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const sorted = Object.entries(leaderboard).sort((a, b) => b[1] - a[1]);
+   const maxScore = sorted[0][1];
 
-        sorted.forEach(([name, score], i) => {
-          const li = document.createElement("li");
-          li.textContent = `${i + 1}. ${name}: ${score}`;
-          list.appendChild(li);
-        });
+    sorted.forEach(([name, score], index) => {
+    const percent = Math.round((score / maxScore) * 100);
 
-        popup.classList.remove("hidden");
-        setTimeout(() => popup.classList.add("show"), 10);
+    const li = document.createElement("li");
+    li.className = "leaderboard-row p-4 rounded-lg bg-gray-800";
 
-        setTimeout(() => {
-          popup.classList.remove("show");
-          setTimeout(() => popup.classList.add("hidden"), 500);
-        }, 3000);
-      });
+    const crown = index === 0 ? `<div class="text-center -mb-2">👑</div>` : '';
+
+    li.innerHTML = `
+      ${crown}
+      <div class="flex justify-between items-center mb-1">
+        <span class="font-semibold ${index === 0 ? 'text-yellow-300' : 'text-white'}">${index + 1}. ${name}</span>
+        <span class="text-sm text-gray-300">${score} pts</span>
+      </div>
+      <div class="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-full bg-green-400" style="width: ${percent}%;"></div>
+      </div>
+    `;
+
+    list.appendChild(li);
+   });
+
+    popup.classList.remove("hidden");
+
+    setTimeout(() => {
+    popup.classList.add("hidden");
+  }, 2000);
+  });
+
 
       socket.on("gameOver", () => {
         const modal = document.getElementById("finalLeaderboard");

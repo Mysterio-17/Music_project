@@ -12,20 +12,22 @@
 </head>
 <body class="bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 min-h-screen text-white flex flex-col items-center justify-center p-4">
 
-<header class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-48 sm:w-64 md:w-80 lg:w-96">
-  <img src="/images/BeatQuest (2).png" alt="BeatQuest Logo" class="w-full" />
+<header class="z-50 w-full flex justify-center fixed top-4 px-4">
+  <div class="w-40 sm:w-56 md:w-72 lg:w-80">
+    <img src="/images/BeatQuest (2).png" alt="BeatQuest Logo" class="w-full" />
+  </div>
 </header>
 
 
   <div id="particles-js" class="fixed top-0 left-0 w-full h-full -z-10"></div>
 
-  <main class="mt-32 w-full max-w-4xl flex flex-col items-center justify-center text-center px-4">
-    <h1 class="text-3xl sm:text-4xl font-bold text-pink-500 mb-2">🎵 Guess the Song Title</h1>
-    <div id="timer" class="text-5xl sm:text-6xl font-bold text-yellow-400 animate-pulse mb-4">0</div>
-    <h2 id="question" class="text-lg sm:text-xl font-semibold mb-6 max-w-2xl"></h2>
+ <main class="mt-32 w-full max-w-4xl flex flex-col items-center justify-center text-center px-4 space-y-6">
+  <h1 class="text-3xl sm:text-4xl font-bold text-pink-500">🎵 Guess the Song Title</h1>
+  <div id="timer" class="text-5xl sm:text-6xl font-bold text-yellow-400 animate-pulse">0</div>
+  <h2 id="question" class="text-lg sm:text-xl font-semibold max-w-2xl px-2"></h2>
 
-    <div id="options" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mb-6 px-2"></div>
-  </main>
+  <div id="options" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full px-2 mb-6"></div>
+</main>
 
   <div id="player" class="hidden"></div>
 

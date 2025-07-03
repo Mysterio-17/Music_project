@@ -25,102 +25,100 @@
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col relative overflow-hidden">
 
-<header class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-48 sm:w-64 md:w-80 lg:w-96">
-  <img src="/images/BeatQuest (2).png" alt="BeatQuest Logo" class="w-full" />
+<div id="particles-js" class="fixed top-0 left-0 w-full h-full -z-10"></div>
+
+<header class="w-full px-4 pt-6 flex justify-center z-50">
+  <img src="/images/BeatQuest (2).png" alt="BeatQuest Logo" class="w-40 sm:w-52 md:w-64 lg:w-72" />
 </header>
 
-
-  <div id="particles-js" class="fixed top-0 left-0 w-full h-full -z-10"></div>
-
-  <div class="absolute top-6 right-4 sm:right-6 bg-gray-800 px-4 sm:px-6 py-4 rounded-lg shadow-lg w-72 max-w-full">
+<main class="flex flex-col sm:flex-row items-center sm:items-start justify-center flex-grow p-4 sm:gap-10 mt-10 sm:mt-20 text-center">
+  <div class="bg-gray-800 px-4 sm:px-6 py-4 rounded-lg shadow-lg w-full sm:w-80 max-w-md mb-6 sm:mb-0 order-2 sm:order-1">
     <h2 class="text-lg font-bold mb-2">👥 Players in Lobby</h2>
     <ul id="playersUl" class="list-disc list-inside space-y-1 text-sm"></ul>
   </div>
 
-  <main class="flex flex-col items-center justify-center flex-grow p-4 mt-20 sm:mt-32 text-center">
+  <div class="w-full max-w-md px-4 order-1 sm:order-2">
     <h1 class="text-3xl sm:text-4xl font-bold mb-3 text-pink-400">🎵 Lobby Room</h1>
     <p id="roomCode" class="mb-6 text-yellow-300 font-semibold"></p>
 
-    <div class="w-full max-w-md px-4">
-      <input id="playlistInput" type="text" placeholder="Paste YouTube Playlist URL"
-        class="w-full px-4 py-2 mb-4 rounded-md text-black" />
+    <input id="playlistInput" type="text" placeholder="Paste YouTube Playlist URL"
+      class="w-full px-4 py-2 mb-4 rounded-md text-black" />
 
-      <button id="loadPlaylistBtn"
-        class="w-full sm:w-[250px] bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded mb-3">
-        🎶 Load Playlist
-      </button>
+    <button id="loadPlaylistBtn"
+      class="w-full bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded mb-3">
+      🎶 Load Playlist
+    </button>
 
-      <button id="startGameBtn"
-        class="w-full sm:w-[250px] bg-green-500 hover:bg-green-600 px-4 py-2 rounded hidden">
-        ▶️ Start Game
-      </button>
-    </div>
-  </main>
+    <button id="startGameBtn"
+      class="w-full bg-green-500 hover:bg-green-600 px-4 py-2 rounded hidden">
+      ▶️ Start Game
+    </button>
+  </div>
+</main>
 
-  <script>
-    const socket = io();
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomCode = urlParams.get("room");
-    const isHost = urlParams.get("host") === "true";
-    const username = urlParams.get("username");
+<script>
+  const socket = io();
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomCode = urlParams.get("room");
+  const isHost = urlParams.get("host") === "true";
+  const username = urlParams.get("username");
 
-    socket.emit("joinRoom", { username, roomCode });
+  socket.emit("joinRoom", { username, roomCode });
+  document.getElementById("roomCode").innerText = `Room Code: ${roomCode}`;
 
-    document.getElementById("roomCode").innerText = `Room Code: ${roomCode}`;
+  if (isHost) {
+    document.getElementById("startGameBtn").classList.remove("hidden");
+  }
 
-    if (isHost) {
-      document.getElementById("startGameBtn").classList.remove("hidden");
+  document.getElementById("startGameBtn").onclick = () => {
+    socket.emit("startGame", { roomCode: roomCode });
+    console.log("🚀 startGame emitted to server");
+  };
+
+  document.getElementById("loadPlaylistBtn").onclick = () => {
+    const url = document.getElementById("playlistInput").value.trim();
+    if (!url) return alert("Paste a playlist URL");
+    const playlistId = extractPlaylistId(url);
+    if (!playlistId) return alert("Invalid playlist URL");
+    socket.emit("loadPlaylist", { playlistId, room: roomCode });
+  };
+
+  function extractPlaylistId(url) {
+    const match = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+  }
+
+  socket.on("gameStarted", () => {
+    console.log("Game started! Redirecting to game.html");
+    window.location.href = `/game.html?room=${roomCode}&username=${username}`;
+  });
+
+  socket.on("updatePlayers", (usernames) => {
+    const playersUl = document.getElementById("playersUl");
+    playersUl.innerHTML = '';
+    usernames.forEach(name => {
+      const li = document.createElement("li");
+      li.textContent = name;
+      playersUl.appendChild(li);
+    });
+  });
+</script>
+
+<script>
+  particlesJS("particles-js", {
+    particles: {
+      number: { value: 100 },
+      size: { value: 2 },
+      color: { value: "#ffffff" },
+      opacity: { value: 0.7 },
+      move: { speed: 0.3 },
+      line_linked: { enable: false }
+    },
+    interactivity: {
+      detect_on: "canvas",
+      events: { onhover: { enable: false }, onclick: { enable: false } }
     }
-
-    document.getElementById("startGameBtn").onclick = () => {
-      socket.emit("startGame", { roomCode: roomCode });
-      console.log("🚀 startGame emitted to server");
-    };
-
-    document.getElementById("loadPlaylistBtn").onclick = () => {
-      const url = document.getElementById("playlistInput").value.trim();
-      if (!url) return alert("Paste a playlist URL");
-      const playlistId = extractPlaylistId(url);
-      if (!playlistId) return alert("Invalid playlist URL");
-      socket.emit("loadPlaylist", { playlistId, room: roomCode });
-    };
-
-    function extractPlaylistId(url) {
-      const match = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
-      return match ? match[1] : null;
-    }
-
-    socket.on("gameStarted", () => {
-      console.log("Game started! Redirecting to game.html");
-      window.location.href = `/game.html?room=${roomCode}&username=${username}`;
-    });
-
-    socket.on("updatePlayers", (usernames) => {
-      const playersUl = document.getElementById("playersUl");
-      playersUl.innerHTML = '';
-      usernames.forEach(name => {
-        const li = document.createElement("li");
-        li.textContent = name;
-        playersUl.appendChild(li);
-      });
-    });
-  </script>
-
-  <script>
-    particlesJS("particles-js", {
-      particles: {
-        number: { value: 100 },
-        size: { value: 2 },
-        color: { value: "#ffffff" },
-        opacity: { value: 0.7 },
-        move: { speed: 0.3 },
-        line_linked: { enable: false }
-      },
-      interactivity: {
-        detect_on: "canvas",
-        events: { onhover: { enable: false }, onclick: { enable: false } }
-      }
-    });
-  </script>
+  });
+</script>
 </body>
 </html>

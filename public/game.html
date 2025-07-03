@@ -43,6 +43,12 @@
       <!-- <button onclick="location.reload()" class="mt-6 bg-purple-600 px-4 py-2 rounded text-white hover:bg-purple-700">Play Again</button> -->
     </div>
   </div>
+  <div id="midLeaderboard" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 hidden">
+  <div class="bg-gray-800 rounded-xl p-6 sm:p-8 w-full max-w-lg mx-4 text-center shadow-lg">
+    <h2 class="text-2xl sm:text-3xl font-bold mb-6">📊 Current Leaderboard</h2>
+    <ul id="midLeaderboardList" class="space-y-4 text-left text-sm sm:text-base"></ul>
+    </div>
+  </div>
 
  <style>
   body {
@@ -82,6 +88,16 @@
   }
   .leaderboard-row:hover {
     background-color: #374151; 
+  }
+  #midLeaderboard {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+ }
+
+  #midLeaderboard.show {
+    opacity: 1;
+    transform: scale(1);
   }
 
 </style>
@@ -224,12 +240,44 @@
   }, 2000);
   });
 
-   socket.on("gameOver", (leaderboard) => {
+  socket.on("midLeaderboard", () => {
+  const list = document.getElementById("midLeaderboardList");
+  const modal = document.getElementById("midLeaderboard");
+
+  const sorted = Object.entries(latestLeaderboard).sort((a, b) => b[1] - a[1]);
+  const totalPossiblePoints = 700 * 10; 
+  list.innerHTML = '';
+
+  sorted.forEach(([name, score], i) => {
+    const percent = Math.round((score / totalPossiblePoints) * 100);
+    const li = document.createElement("li");
+    li.className = "leaderboard-row p-4 rounded-lg bg-gray-700 hover:bg-gray-600 transition";
+    li.innerHTML = `
+      <div class="flex justify-between items-center mb-1">
+        <span class="font-semibold text-white">${i + 1}. ${name}</span>
+        <span class="text-sm text-gray-300">${score} pts</span>
+      </div>
+      <div class="w-full h-2 bg-gray-600 rounded-full overflow-hidden">
+        <div class="h-full bg-green-400" style="width: ${percent}%;"></div>
+      </div>
+    `;
+    list.appendChild(li);
+  });
+
+  modal.classList.remove("hidden");
+  modal.classList.add("show");
+
+    setTimeout(() => {
+      modal.classList.add("hidden");
+      modal.classList.remove("show");
+    }, 3000);
+  });
+
+   socket.on("gameOver", ({ leaderboard, roundsPlayed }) => {
   const modal = document.getElementById("finalLeaderboard");
   const list = document.getElementById("finalLeaderboardList");
   list.innerHTML = '';
 
-    const roundsPlayed = 10; 
    const totalPossiblePoints = roundsPlayed * 700;
 
    const sorted = Object.entries(leaderboard).sort((a, b) => b[1] - a[1]);

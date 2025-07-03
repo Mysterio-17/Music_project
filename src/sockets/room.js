@@ -55,7 +55,7 @@ async function startNextRound(roomCode, io, songs) {
   const song = songs[round.currentSongIndex];
 
   if (round.isRoundActive || !song) return;
-
+  
   round.isRoundActive = true;
   round.answered = false;
   
@@ -84,12 +84,16 @@ async function startNextRound(roomCode, io, songs) {
   setTimeout(async () => {
     if (!round.isRoundActive) return;
 
-    const leaderboard = await calculateScoresAndUpdate(roomCode, round.responses, questionData.correctAnswer);
+  const leaderboard = await calculateScoresAndUpdate(roomCode, round.responses, questionData.correctAnswer);
 
-    io.to(roomCode).emit("roundEnd", round.responses);
-    io.to(roomCode).emit("updateLeaderboard", leaderboard);
-    round.isRoundActive = false;
+   io.to(roomCode).emit("roundEnd", round.responses);
+   io.to(roomCode).emit("updateLeaderboard", leaderboard);
+   round.isRoundActive = false;
 
+    const showMidLeaderboard = (round.currentSongIndex + 1) % 5 === 0;
+
+    if (showMidLeaderboard) {
+    io.to(roomCode).emit("midLeaderboard");
     setTimeout(() => {
       round.currentSongIndex++;
       if (round.currentSongIndex >= songs.length) {
@@ -97,13 +101,28 @@ async function startNextRound(roomCode, io, songs) {
         delete gameData[roomCode];
 
         io.to(roomCode).emit("updateLeaderboard", leaderboard);
-        return io.to(roomCode).emit("gameOver", leaderboard);
+        return io.to(roomCode).emit("gameOver", { leaderboard, roundsPlayed: round.currentSongIndex });
+      }
+
+      startNextRound(roomCode, io, songs);
+     }, 4000);
+   } else {
+    setTimeout(() => {
+      round.currentSongIndex++;
+      if (round.currentSongIndex >= songs.length) {
+        delete currentRounds[roomCode];
+        delete gameData[roomCode];
+
+        io.to(roomCode).emit("updateLeaderboard", leaderboard);
+        return io.to(roomCode).emit("gameOver", { leaderboard, roundsPlayed: round.currentSongIndex });
       }
 
       startNextRound(roomCode, io, songs);
     }, 3000);
+   }
 
-  }, 7000);; 
+  }, 7000);
+
 }
 
 module.exports = (io) => {

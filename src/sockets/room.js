@@ -90,7 +90,7 @@ async function startNextRound(roomCode, io, songs) {
    io.to(roomCode).emit("updateLeaderboard", leaderboard);
    round.isRoundActive = false;
 
-    const showMidLeaderboard = (round.currentSongIndex + 1) % 5 === 0;
+const showMidLeaderboard = round.currentSongIndex === 4;
 
     if (showMidLeaderboard) {
     io.to(roomCode).emit("midLeaderboard");

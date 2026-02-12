@@ -1,6 +1,6 @@
 # 🎵 BeatQuest – Real-Time Multiplayer Music Guessing Game
 
-**BeatQuest** is a real-time multiplayer game where players compete to guess the name of songs after hearing short audio snippets. Inspired by SongTrivia and Heardle, this game is powered by the YouTube API, Socket.IO, and MongoDB.
+**BeatQuest** is a real-time multiplayer game where players compete to guess the name of songs after hearing short audio snippet. Inspired by SongTrivia and Heardle, this game is powered by the YouTube API, Socket.IO, and MongoDB.
 
 Hosted on [Railway](https://railway.app) and designed for fast-paced interaction and dynamic leaderboard updates.
 
